@@ -1,25 +1,27 @@
 %% IEC 61000-4-2 Curent Discharge Waveform for 4kV
 % Code written by Sebastian Courtney
-% Last updated: July 1, 2014
-
+% Last updated: July 10, 2014
+tic
 %% Clear out figures/variables and close open windows
 clear all;
 close all;
 clc;
 
-%% Enable Plots (1 = enable, 0 = disable)
-firstPlot = 1;
-secondPlot = 1;
+%% Enable  (1 = enable, 0 = disable)
+firstPlot = 0;
+secondPlot = 0;
+txtGen = 0;
 
 %% Set time range and time step. (Modify later for user input?)
 step = 0.001; % time step
-tFin = 80; % end of time range
-t = [0:step:tFin]; % 0<ns> to tFin<ns> in 0.001<ns> steps
+tFin = 200; % end of time range
+t = 0:step:tFin; % 0<ns> to tFin<ns> in 0.001<ns> steps
 
 %% Set equation inputs (Modify later for user input?)
+kV = 8;
 n = 1.8;
-I1 = 16.6; % [Amps] at 4kV
-I2 = 9.3; % [Amps] at 4kV
+I1 = 16.6 * (kV/4); % [Amps] at 4kV
+I2 = 9.3 * (kV/4); % [Amps] at 4kV
 T1 = 1.1; % Tau 1 [ns]
 T2 = 2; % Tau 2 [ns]
 T3 = 12; % Tau 3 [ns]
@@ -42,7 +44,7 @@ Ib = I2.*((t./T3).^n).*exp(-t./T4)./(k2*(1+(t./T3).^n));
 %% Find and define indices for the points equivalent to 10% and 90% of Ipk
 for k=1:pkIndex
     if I(k)<=(0.1*Ipk) && I(k+1)>(0.1*Ipk)
-        tenpcnt = k; % Used for shifting the 30ns and 60ns measurements to correct "zero-reference"
+        tenpcnt = k; % Used for shifting the 30ns and 60ns measurements to correct "zero-reference" 
     elseif I(k)<=(0.9*Ipk) && I(k+1)>(0.9*Ipk)
         ninetypcnt = k;
     end
@@ -140,17 +142,23 @@ text(t(pkIndex2+(0.5/step)),I(pkIndex2)+0.2,strcat('Ipk2 = ',num2str(I(pkIndex2)
 end
 
 %% Create data arrays for spectre simulation
-
-for i=1:1:2*length(t)
-    if mod(i,2)~=0
-        S(i) = t((i+1)/2);
-        S(i+1) = I((i+1)/2);
-    end
-end
-
+if txtGen==1
+    
 spectre = zeros(length(t),2);
 for i=1:length(t)
     %spectre(i,1) = '+';
     spectre(i,1) = t(i);
     spectre(i,2) = I(i);
 end
+
+fid = fopen('curentPulse.txt','w');
+
+for i=1:length(t)
+    sVar = horzcat(num2str(spectre(i,1)),'n ',num2str(spectre(i,2)));
+    fprintf(fid, '%s \r\n',sVar);
+end
+
+fclose('all');
+
+end
+time = toc
